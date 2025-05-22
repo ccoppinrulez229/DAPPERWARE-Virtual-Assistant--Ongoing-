@@ -1,0 +1,12 @@
+Welcome to Sticky Notes!
+You may be familiar with this one. Got some quick ideas to jot down while grinding through that work? Sticky notes got ya' covered.
+Simply click on the button with the plus symbol to add a new sticky note. You can freely type anything into it, including symbols and special characters.
+To go to a new line, press ENTER on your keyboard. To delete characters, press backspace. Easy, right?
+You can move the notes on your desktop by double clicking on them and dragging them. Their colors can be changed by right-clicking on them.
+You can add as many sticky notes as you want on your desktop, so go nuts!
+To hide sticky notes, click on the button with the open eye symbol. This will hide all sticky notes on your desktop to help reduce clutter. They can be revealed again at anytime by clicking on the button again.
+Want to get rid of a sticky note you no longer need? Click the button with the trash can symbol to activate delete mode. When delete mode is activated, double-click on the sticky note you want to delete and it will disappear from your desktop. Presto!
+Be careful, however! Once a sticky note is deleted, it's gone for good!
+Click the button again to deactivate delete mode.
+That's all for now! Have fun with your sticky ventures!
+---

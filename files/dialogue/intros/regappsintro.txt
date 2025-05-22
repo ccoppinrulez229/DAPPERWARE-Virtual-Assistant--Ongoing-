@@ -1,0 +1,12 @@
+Welcome to Register Productivity Apps!
+This is where you will be able to register any applications that are used in your day to day productivity tasks, such as text formatting applications, study software, tools and so on.
+By registering apps, I will be able to keep track of your overall usage in terms of when and how long you are staying on task within these apps and reward you for doing so by increasing your XP.
+The longer you have these registered apps focused and in use on your computer, the more XP you will gain over time!
+I do not want to pry into your app usage, so this application will give you full control over what I am allowed to monitor!
+Listed in the left menu of the window are all applications that are currently opened on your desktop. These are applications that must have their own window to be recognized by me.
+You can refresh the application list at any time to find more potential applications by clicking the refresh button to the left of this square, as I do not take live updates of current application statuses.
+Listed in the right menu are registered applications. To register an application, simply select its name from the left menu and click the right arrow button located in the center of the window. This will move it over to the right menu, marking it as a registered app.
+You can remove registered apps at any time by selecting the application from the right menu and clicking the delete button to the right of the menu.
+To gain XP over time, any of the registered apps must be in focus and in use. I do not count idling applications in the taskbar or ones that are out of focus.
+Go and register some apps, @, and let's get our productivity on!
+---
