@@ -23,6 +23,7 @@ PLANNED FEATURES:
 - More animations for DAPPERWARE to bring him to life
 - Greetings to user based on time of day
 - Do Not Disturb (will make DAPPERWARE go silent asides from general reminders and hide on the user's desktop)
+- Proper window scaling based on desktop resolution (currently all windows are being made to certain sizes based on a 1920x1080 resolution monitor)
 - Calendar
 - To Do List
 - Task Timer
