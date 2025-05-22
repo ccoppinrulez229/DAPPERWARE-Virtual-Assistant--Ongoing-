@@ -1,4 +1,3 @@
-#DAPPERWARE
 DAPPERWARE is a virtual assistant that prioritizes user productivity and rewards them for staying on task. It's an ongoing project that I plan to expand with more features as time goes on. I know how hard it can be to stay on task, especially when work becomes a slog, which is why I wanted to create a fun buddy that acts as a way to keep the user enticed to push on with their work! This is an assistant designed to not pry into the user's tasks and only acts as a means of help and reward whenever needed. This program utilizes various forms of visual feedback and rewards, such as a fully animated assistant, functional UI, functional productivity apps bult in, such as sticky notes, reminders, to do list, calendar, among other things.
 
 ![image](https://github.com/user-attachments/assets/af67e044-eb00-4187-974a-43ade2537579)
