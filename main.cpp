@@ -16,9 +16,9 @@
 
 using namespace std;
 
-bool ttsFinished = true; //global variable to manage when tts is active when called
-bool dialogueStarted = true; //global variable to make tts only play through once when called
 bool talking = false;
+bool dramatic_pause = false;
+bool debug = false;
 vector<string> apps_open;
 
 class dapperware {
@@ -166,10 +166,62 @@ public:
 
 };
 
+
+
 void makeWindowOnTop(sf::RenderWindow& window)
 {
     HWND hwnd = window.getSystemHandle();
     SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+}
+
+void DebugMenu(bool& debug_visible, bool& talking) {
+    sf::Font font;
+    font.loadFromFile("files/font.ttf");
+    sf::Text debug_text;
+    debug_text.setFont(font);
+    debug_text.setCharacterSize(15);
+    debug_text.setColor(sf::Color::White);
+    string txt = "";
+
+    int screenwidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenheight = GetSystemMetrics(SM_CYSCREEN);
+    sf::RenderWindow debug_window(sf::VideoMode(150,500),"Debug",sf::Style::None);
+    debug_window.setPosition(sf::Vector2i(0,0));
+
+    while (debug_window.isOpen()) {
+        sf::Event event;
+        while (debug_window.pollEvent(event)) {
+            auto click = event.mouseButton;
+            // Close event
+            if (event.type == sf::Event::EventType::Closed) {
+                debug_window.close();
+                break;
+            }
+        }
+
+        txt = "Debug Menu\n-------\n";
+        if (talking) {txt += "Talking: ON\n";}
+        else {txt += "Talking: OFF\n";}
+        debug_text.setString(txt);
+
+        debug_window.clear();
+        debug_window.draw(debug_text);
+
+        debug_window.display();
+
+        if (!debug_visible) {
+            debug_window.setVisible(false);
+        }
+        else {
+            debug_window.setVisible(true);
+            debug_window.requestFocus();
+        }
+
+        if (debug_window.hasFocus()) {
+            makeWindowOnTop(debug_window);
+        }
+
+    }
 }
 
 void makeWindowTransparent(sf::RenderWindow& window) {
@@ -501,9 +553,9 @@ void StickyNoteManager(int screenwidth, int screenheight, bool& sticky_notes_ope
     bool creating_notes = false;
     bool first_load = true;
     bool delete_on = false;
-    sf::RenderWindow manager(sf::VideoMode(50,300),"manager",sf::Style::Close);
-    manager.setPosition(sf::Vector2i(screenwidth-130,screenheight-800));
+    sf::RenderWindow manager(sf::VideoMode(300,179),"manager",sf::Style::None);
     makeWindowTransparent(manager);
+    manager.setPosition(sf::Vector2i(screenwidth-126,screenheight-800));
     int max_notes = 1;
     while (manager.isOpen()) {
         sf::Event event;
@@ -583,7 +635,7 @@ void StickyNoteManager(int screenwidth, int screenheight, bool& sticky_notes_ope
             visibility_sprite.setTexture(texture_map["visibility_off"]);
         }
 
-        manager.clear(sf::Color(0,0,0,0));
+        manager.clear(sf::Color(0,0,0,1));
         manager.draw(add_sprite);
         manager.draw(visibility_sprite);
         manager.draw(delete_sprite);
@@ -625,7 +677,7 @@ static BOOL CALLBACK GetActiveAppWindows(HWND hWnd, LPARAM lparam) {
     }
     return TRUE;
 
-}
+} //got this from chat
 
 void FindTheActiveWindow() { //find the currently focused window and checks if it's part of the registered apps
 
@@ -802,86 +854,98 @@ void ProductivityAppsWindow() {
 }
 
 
-void textToSpeech(speech_bubble& bubble,sf::RenderWindow& window, ifstream& dialogue, string& current_dialog_file) {
+void textToSpeech(speech_bubble& bubble, ifstream& dialogue, string& current_dialog_file) {
     string line;
-    while (!dialogueStarted) {
-        dialogueStarted = true;
-        HRESULT hr = ::CoInitialize(NULL);
+    HRESULT hr = ::CoInitialize(NULL);
 
-        ISpVoice* pVoice = NULL;
-        hr = ::CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+    ISpVoice* pVoice = NULL;
+    hr = ::CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+    while (true) {
+        if (talking) {
+            //cout << "talk tuah" << endl;
+            //talking = false;
 
-        string templine = "";
-        while (getline(dialogue,line)) { //iterates through all dialogue in the string vector
-            while (line=="//") { //checks for spacings and halts further dialogue based on certain dialogue files
-                ttsFinished = true; //set to true so the dialogue box can be hidden while halted
-                if (current_dialog_file=="intro" && save_vector[1]=="IntroNotDone") {
-                    save_vector[0]= EnterNameWindow();
-                    WriteVecToFile(save_vector,"files/save.txt");
-                    ttsFinished = false;
-                    break;
+            string templine = "";
+            while (getline(dialogue,line)) { //iterates through all dialogue in the string vector
+                if (line=="//") { //checks for spacings and halts further dialogue based on certain dialogue files
+                    dramatic_pause = true; //set to true so the dialogue box can be hidden while halted
+                    if (current_dialog_file=="intro" && save_vector[1]=="IntroNotDone") {
+                        save_vector[0]= EnterNameWindow();
+                        WriteVecToFile(save_vector,"files/save.txt");
+                        dramatic_pause = false;
+                    }
+                    continue;
+                }
+                if (line=="---") { //when the end of the dialog file is reached
+                    if (current_dialog_file=="intro" && save_vector[1]=="IntroNotDone") {
+                        current_dialog_file.clear();
+                        save_vector[1]="IntroDone";
+                        WriteVecToFile(save_vector,"files/save.txt");
+                    }
+                    if (current_dialog_file=="sticky notes intro" && save_vector[2]=="StickyNotesIntroNotDone") {
+                        current_dialog_file.clear();
+                        save_vector[2]= "StickyNotesIntroDone";
+                        WriteVecToFile(save_vector,"files/save.txt");
+                    }
+                    if (current_dialog_file=="register apps intro" && save_vector[3]=="ProdAppsIntroNotDone") {
+                        current_dialog_file.clear();
+                        save_vector[3]="ProdAppsIntroDone";
+                        WriteVecToFile(save_vector,"files/save.txt");
+                    }
+                    talking = false;
+                    continue;
+                }
+                string namemodifiedline = "";
+                for (int i=0 ; i<line.size() ; i++) { //modifies the string with the user's name wherever there's an @ symbol
+                    if (line[i]=='@') {
+                        namemodifiedline+=save_vector[0];
+                    }
+                    else {
+                        namemodifiedline+=line[i];
+                    }
+                }
+                string updatedline = "";
+                for (int i=0 ; i<namemodifiedline.size() ; i+=32) {
+                    updatedline += namemodifiedline.substr(i,32) + "\n";
+                }
+                bubble.changeStr(updatedline);
+                //cout << "Speaking..." << endl;
+
+                hr = pVoice->Speak(stringToWString(namemodifiedline).c_str(), 0, NULL);
+                while (true) { //checks the current speech status and breaks when its finished
+                    if (pVoice->GetStatus(NULL, NULL) == S_OK) {
+                        break; // Exit the loop once the speech finishes
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Wait a bit before checking again
                 }
             }
-            if (line=="//") { //when above loop exhausts and the line is still spacing, skip to next dialogue iteration
-                continue;
-            }
-            if (line=="---") { //when the end of the dialog file is reached
-                if (current_dialog_file=="intro" && save_vector[1]=="IntroNotDone") {
-                    current_dialog_file.clear();
-                    save_vector[1]="IntroDone";
-                    WriteVecToFile(save_vector,"files/save.txt");
-                }
-                if (current_dialog_file=="sticky notes intro" && save_vector[2]=="StickyNotesIntroNotDone") {
-                    current_dialog_file.clear();
-                    save_vector[2]= "StickyNotesIntroDone";
-                    WriteVecToFile(save_vector,"files/save.txt");
-                }
-                if (current_dialog_file=="register apps intro" && save_vector[3]=="ProdAppsIntroNotDone") {
-                    current_dialog_file.clear();
-                    save_vector[3]="ProdAppsIntroDone";
-                    WriteVecToFile(save_vector,"files/save.txt");
-                }
-                talking = false;
-                continue;
-            }
-            string namemodifiedline = "";
-            for (int i=0 ; i<line.size() ; i++) { //modifies the string with the user's name wherever there's an @ symbol
-                if (line[i]=='@') {
-                    namemodifiedline+=save_vector[0];
-                }
-                else {
-                    namemodifiedline+=line[i];
-                }
-            }
-            string updatedline = "";
-            for (int i=0 ; i<namemodifiedline.size() ; i+=32) {
-                updatedline += namemodifiedline.substr(i,32) + "\n";
-            }
-            bubble.changeStr(updatedline);
-            hr = pVoice->Speak(stringToWString(namemodifiedline).c_str(), 0, NULL);
-            while (true) { //checks the current speech status and breaks when its finished
-                if (pVoice->GetStatus(NULL, NULL) == S_OK) {
-                    break; // Exit the loop once the speech finishes
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));  // Wait a bit before checking again
-            }
+            //pVoice->Release();
+            //::CoUninitialize();
         }
-
-        pVoice->Release();
-        ::CoUninitialize();
-        ttsFinished = true; // Mark the speech as finished
-        break;
     }
-    dialogueStarted = true;
 }
+
+
 
 int main()
 {
+    //Debug window loaded in first
+    std::thread debug_thread (DebugMenu,std::ref(debug),std::ref(talking));
+    debug_thread.detach();
+
+
     sf::Font font; //default font that will be used throughout the application
     if (!font.loadFromFile("files/font.ttf")) {
         cout << "Font not found!" << endl;
         return 1;
     }
+
+
+
+    string current_dialog_file;
+    ifstream dialogue;
+
+
 
     int screenwidth = GetSystemMetrics(SM_CXSCREEN);
     int screenheight = GetSystemMetrics(SM_CYSCREEN);
@@ -889,13 +953,12 @@ int main()
     bool grabbed = false;
     bool contextmenu = false;
     bool intro_done = false;
-
     bool sticky_notes_opened = false;
     bool prod_apps_opened = false;
 
     string task;
     string name;
-    string current_dialog_file;
+
 
     sf::RenderWindow dapperware_window(sf::VideoMode(480,630),"DAPPERWARE",sf::Style::None);
     dapperware_window.setPosition(sf::Vector2i(screenwidth-490,screenheight-670));
@@ -906,6 +969,9 @@ int main()
     circle.setFillColor(sf::Color::Transparent);
 
     speech_bubble bubble("",font);
+
+    std::thread tts_thread(textToSpeech,std::ref(bubble),std::ref(dialogue),std::ref(current_dialog_file));
+    tts_thread.detach();
 
     vector<context_menu_button> context_menu_buttons = {
     context_menu_button("Register Prod. Apps",font,213,215),
@@ -924,7 +990,7 @@ int main()
         context_menu_button("Exit",font,477,479),
     };
 
-    ifstream dialogue;
+
     makeWindowTransparent(dapperware_window);
 
     while (dapperware_window.isOpen()) {
@@ -960,19 +1026,25 @@ int main()
                     }
                 }
             }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+                if (event.type == sf::Event::EventType::KeyPressed) {
+                    debug = !debug;
+                }
+
+            }
         }
         if (task == "Exit") {
             dapperware_window.close();
             break;
         }
-        else if (task == "Sticky Notes" && !sticky_notes_opened) {
-            if (save_vector[2]=="StickyNotesIntroNotDone" && !talking) { //plays the sticky notes intro for first time users
-                dialogue.seekg(0,std::ios::beg);
+        else if (task == "Sticky Notes" && !sticky_notes_opened && !talking) {
+            if (save_vector[2]=="StickyNotesIntroNotDone") { //plays the sticky notes intro for first time users
+                dialogue.close();
                 dialogue.open("files/dialogue/intros/stickynotesintro.txt");
                 current_dialog_file = "sticky notes intro";
                 talking = true;
-                ttsFinished = false;
-                dialogueStarted = false;
+                //ttsFinished = false;
+                //dialogueStarted = false;
             }
             sticky_notes_opened=true;
             contextmenu=false;
@@ -980,14 +1052,14 @@ int main()
             stickynotemanager_thread.detach();
 
         }
-        else if (task == "Register Prod. Apps" && !prod_apps_opened) {
-            if (save_vector[3]=="ProdAppsIntroNotDone" && !talking) {
-                dialogue.seekg(0,std::ios::beg);
+        else if (task == "Register Prod. Apps" && !prod_apps_opened && !talking) {
+            if (save_vector[3]=="ProdAppsIntroNotDone") {
+                dialogue.close();
                 dialogue.open("files/dialogue/intros/regappsintro.txt");
                 current_dialog_file = "register apps intro";
                 talking = true;
-                ttsFinished = false;
-                dialogueStarted = false;
+                //ttsFinished = false;
+                //dialogueStarted = false;
             }
             prod_apps_opened = true;
             contextmenu = false;
@@ -998,12 +1070,12 @@ int main()
             dapperware_window.setPosition(sf::Vector2i(mouseposition.x-315,mouseposition.y-450));
         }
         if (save_vector[1]=="IntroNotDone" && !talking) { //triggers the intro for first time users
-            dialogue.seekg(0,std::ios::beg);
+            dialogue.close();
             dialogue.open("files/dialogue/intros/intro.txt");
             current_dialog_file = "intro";
             talking=true;
-            ttsFinished=false;
-            dialogueStarted=false;
+            //ttsFinished=false;
+            //dialogueStarted=false;
         }
         else if (save_vector[1]=="IntroDone") {
             intro_done = true;
@@ -1016,9 +1088,7 @@ int main()
         if (contextmenu) { //will draw the context menu if opened
             DrawContextMenuButtons(context_menu_buttons,dapperware_window);
         }
-        if (!ttsFinished) { //shows speech bubble and enables tts voice when tts is disabled
-            std::thread ttsThread(textToSpeech,std::ref(bubble),std::ref(dapperware_window),std::ref(dialogue),std::ref(current_dialog_file));
-            ttsThread.detach();
+        if (talking && !dramatic_pause) { //shows speech bubble and enables tts voice when tts is enabled
             bubble.draw(dapperware_window);
         }
 
