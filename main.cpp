@@ -21,6 +21,13 @@ bool dramatic_pause = false;
 bool debug = false;
 vector<string> apps_open;
 
+map<string,bool> context_apps_open = {
+    {"Sticky Notes",false},
+    {"Register Prod. Apps",false}
+};
+vector<string> currently_opened_apps;
+
+
 class dapperware {
     sf::Sprite dapperware_sprite;
     map<string,sf::Texture> texture_map;//allocates the texture map to memory
@@ -33,10 +40,15 @@ public:
     dapperware() { //constructor. initializes the texture map for all of dapperware's animations
         dapperware_sprite.setPosition(100,285);
         dapperware_sprite.setScale(0.96f,0.96f);
-        sf::Texture dapper_texture;
-        dapper_texture.loadFromFile("files/images/animations/spin.png");
-        texture_map["spin"]= dapper_texture;
-        dapperware_sprite.setTexture(texture_map["spin"]);
+
+        texture_map["idle"].loadFromFile("files/images/animations/idle.png");
+        texture_map["open_head"].loadFromFile("files/images/animations/opening head.png");
+        texture_map["dig_in_head"].loadFromFile("files/images/animations/diggin in head.png");
+        texture_map["put_on_joke_glasses"].loadFromFile("files/images/animations/put on joke glasses.png");
+        texture_map["joke_glasses_idle"].loadFromFile("files/images/animations/joke glasses idle.png");
+
+        dapperware_sprite.setTexture(texture_map["idle"]);
+        dapperware_sprite.setTextureRect(sf::IntRect(0,0,450,360));
 
     }
     void UpdateSprite() { //will update the sprite to the current animation frame using rect. called every frame
@@ -45,13 +57,33 @@ public:
             if (450*anim_frame < dapperware_sprite.getTexture()->getSize().x) {
                 dapperware_sprite.setTextureRect(sf::IntRect(450*anim_frame,0,450,360));
             }
-            else {
+            else { //animation has finished..
+                dapperware_sprite.setTextureRect(sf::IntRect(0,0,450,360));
                 anim_frame=0;
+
+                if (dapperware_sprite.getTexture()==&texture_map["open_head"]) {
+                    dapperware_sprite.setTexture(texture_map["dig_in_head"]);
+                }
+                else if (dapperware_sprite.getTexture()==&texture_map["dig_in_head"]) {
+                    if (find(currently_opened_apps.begin(),currently_opened_apps.end(),"Tell me a joke!")!=currently_opened_apps.end()) {
+                        dapperware_sprite.setTexture(texture_map["put_on_joke_glasses"]);
+                    }
+                }
+                else if (dapperware_sprite.getTexture()==&texture_map["put_on_joke_glasses"]) {
+                    dapperware_sprite.setTexture(texture_map["joke_glasses_idle"]);
+                }
             }
             clock.restart();
         }
     }
+    void ChangeAnimation(string str) {
+        anim_frame=0;
+        if (str=="open head") {
+            dapperware_sprite.setTexture(texture_map["open_head"]);
+        }
+        dapperware_sprite.setTextureRect(sf::IntRect(0,0,450,360));
 
+    }
     sf::Sprite& getSprite() {
         return this->dapperware_sprite;
     }
@@ -63,6 +95,7 @@ class context_menu_button {
     int rectangle_y=237;
     int text_y=239;
     string nam;
+    bool clicked = false;
 public:
     context_menu_button(string name,sf::Font& font, int rect_y, int tex_y) { //constructor
         rectangle.setSize(sf::Vector2f(135,20));
@@ -87,6 +120,13 @@ public:
         window.draw(text);
     }
     string click() {
+        clicked = !clicked;
+        if (!clicked) {
+            rectangle.setFillColor(sf::Color(153,167,179,255));
+        }
+        else {
+            rectangle.setFillColor(sf::Color(85, 98, 110, 255));
+        }
         return nam;
     }
     void hovered() {
@@ -185,7 +225,7 @@ void DebugMenu(bool& debug_visible, bool& talking) {
 
     int screenwidth = GetSystemMetrics(SM_CXSCREEN);
     int screenheight = GetSystemMetrics(SM_CYSCREEN);
-    sf::RenderWindow debug_window(sf::VideoMode(150,500),"Debug",sf::Style::None);
+    sf::RenderWindow debug_window(sf::VideoMode(250,500),"Debug",sf::Style::None);
     debug_window.setPosition(sf::Vector2i(0,0));
 
     while (debug_window.isOpen()) {
@@ -202,6 +242,15 @@ void DebugMenu(bool& debug_visible, bool& talking) {
         txt = "Debug Menu\n-------\n";
         if (talking) {txt += "Talking: ON\n";}
         else {txt += "Talking: OFF\n";}
+        for (auto it = context_apps_open.begin() ; it != context_apps_open.end() ; it++) {
+            txt+= it->first + ": ";
+            if (it->second) {
+                txt += "ON\n";
+            }
+            else {
+                txt += "OFF\n";
+            }
+        }
         debug_text.setString(txt);
 
         debug_window.clear();
@@ -266,6 +315,9 @@ ifstream save("files/save.txt");
 vector<string> save_vector = ReadFileToVec(save);
 ifstream regsave("files/prodappssave.txt");
 vector<string> registered_apps_save = ReadFileToVec(regsave);
+
+
+
 
 string EnterNameWindow() {
     sf::Texture window_texture;
@@ -527,6 +579,10 @@ void StickyNote(sf::Font& font, string filename,bool& sticky_notes_close, int& m
         else {
             note_window.setVisible(false);
         }
+
+        if (!context_apps_open["Sticky Notes"]) {
+            note_window.close();
+        }
     }
 }
 
@@ -642,6 +698,10 @@ void StickyNoteManager(int screenwidth, int screenheight, bool& sticky_notes_ope
         manager.display();
         if (manager.hasFocus()) {
             makeWindowOnTop(manager);
+        }
+        if (!context_apps_open["Sticky Notes"]) {
+            currently_opened_apps.erase(remove(currently_opened_apps.begin(),currently_opened_apps.end(),"Sticky Notes"));
+            manager.close();
         }
     }
 }
@@ -850,9 +910,13 @@ void ProductivityAppsWindow() {
         prod_window.draw(right_button);
         prod_window.draw(delete_sprite);
         prod_window.display();
+
+        if (!context_apps_open["Register Prod. Apps"]) {
+            currently_opened_apps.erase(remove(currently_opened_apps.begin(),currently_opened_apps.end(),"Register Prod. Apps"));
+            prod_window.close();
+        }
     }
 }
-
 
 void textToSpeech(speech_bubble& bubble, ifstream& dialogue, string& current_dialog_file) {
     string line;
@@ -926,7 +990,6 @@ void textToSpeech(speech_bubble& bubble, ifstream& dialogue, string& current_dia
 }
 
 
-
 int main()
 {
     //Debug window loaded in first
@@ -941,11 +1004,8 @@ int main()
     }
 
 
-
     string current_dialog_file;
     ifstream dialogue;
-
-
 
     int screenwidth = GetSystemMetrics(SM_CXSCREEN);
     int screenheight = GetSystemMetrics(SM_CYSCREEN);
@@ -953,15 +1013,13 @@ int main()
     bool grabbed = false;
     bool contextmenu = false;
     bool intro_done = false;
-    bool sticky_notes_opened = false;
-    bool prod_apps_opened = false;
 
     string task;
     string name;
 
 
-    sf::RenderWindow dapperware_window(sf::VideoMode(480,630),"DAPPERWARE",sf::Style::None);
-    dapperware_window.setPosition(sf::Vector2i(screenwidth-490,screenheight-670));
+    sf::RenderWindow dapperware_window(sf::VideoMode(520,630),"DAPPERWARE",sf::Style::None);
+    dapperware_window.setPosition(sf::Vector2i(screenwidth-510,screenheight-660));
     dapperware dapperware_assistant;
 
     sf::CircleShape circle(50);
@@ -1011,8 +1069,10 @@ int main()
                     }
                 }
                 for (context_menu_button& button : context_menu_buttons) {
-                    if (button.returnShape().getGlobalBounds().contains(click.x,click.y) && intro_done) {
+                    if (button.returnShape().getGlobalBounds().contains(click.x,click.y) && intro_done && !talking) {
                         task = button.click();
+                        contextmenu = !contextmenu;
+                        context_apps_open[task] = !context_apps_open[task];
                     }
                 }
             }
@@ -1037,22 +1097,21 @@ int main()
             dapperware_window.close();
             break;
         }
-        else if (task == "Sticky Notes" && !sticky_notes_opened && !talking) {
+        else if (task == "Sticky Notes" && !talking) {
             if (save_vector[2]=="StickyNotesIntroNotDone") { //plays the sticky notes intro for first time users
                 dialogue.close();
                 dialogue.open("files/dialogue/intros/stickynotesintro.txt");
                 current_dialog_file = "sticky notes intro";
                 talking = true;
-                //ttsFinished = false;
-                //dialogueStarted = false;
             }
-            sticky_notes_opened=true;
-            contextmenu=false;
-            std::thread stickynotemanager_thread (StickyNoteManager,screenwidth,screenheight,std::ref(sticky_notes_opened),std::ref(font));
-            stickynotemanager_thread.detach();
-
+            if (context_apps_open["Sticky Notes"] && find(currently_opened_apps.begin(),currently_opened_apps.end(),"Sticky Notes")==currently_opened_apps.end()) {
+                currently_opened_apps.push_back("Sticky Notes");
+                //context_apps_open["Sticky Notes"]=!context_apps_open["Sticky Notes"];
+                std::thread stickynotemanager_thread (StickyNoteManager,screenwidth,screenheight,std::ref(context_apps_open["Sticky Notes"]),std::ref(font));
+                stickynotemanager_thread.detach();
+            }
         }
-        else if (task == "Register Prod. Apps" && !prod_apps_opened && !talking) {
+        else if (task == "Register Prod. Apps" &&!talking) {
             if (save_vector[3]=="ProdAppsIntroNotDone") {
                 dialogue.close();
                 dialogue.open("files/dialogue/intros/regappsintro.txt");
@@ -1061,10 +1120,20 @@ int main()
                 //ttsFinished = false;
                 //dialogueStarted = false;
             }
-            prod_apps_opened = true;
-            contextmenu = false;
-            std::thread prodapps_thread (ProductivityAppsWindow);
-            prodapps_thread.detach();
+            if (context_apps_open["Register Prod. Apps"] && find(currently_opened_apps.begin(),currently_opened_apps.end(),"Register Prod. Apps")==currently_opened_apps.end()) {
+                //context_apps_open["Register Prod. Apps"] = !context_apps_open["Register Prod. Apps"];
+                currently_opened_apps.push_back("Register Prod. Apps");
+                std::thread prodapps_thread (ProductivityAppsWindow);
+                prodapps_thread.detach();
+            }
+        }
+        else if (task == "Tell me a joke!" && !talking) {
+            talking = true;
+            if (find(currently_opened_apps.begin(),currently_opened_apps.end(),"Tell me a joke!")==currently_opened_apps.end()) {
+                currently_opened_apps.push_back("Tell me a joke!");
+                dapperware_assistant.ChangeAnimation("open head");
+
+            }
         }
         if (grabbed && dapperware_window.hasFocus()) {
             dapperware_window.setPosition(sf::Vector2i(mouseposition.x-315,mouseposition.y-450));
