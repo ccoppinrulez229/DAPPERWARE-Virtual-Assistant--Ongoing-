@@ -16,7 +16,7 @@ IMPLEMENTED FEATURES:
 - Introduction
 - Fully animated DAPPERWARE (only spinning animation for now to test real time animations)
 - Application for registering productivity apps
-- Sticky notes app (known issue where too many notes cause lag and sticky note manager window doesnt display correctly without border)
+- Sticky notes app
 - Exit button (yeah I'd hope so)
 - Debug Menu (Click on DAPPERWARE to bring him in focus then press D)
 
