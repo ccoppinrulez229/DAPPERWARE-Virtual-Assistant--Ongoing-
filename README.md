@@ -16,8 +16,9 @@ IMPLEMENTED FEATURES:
 - Introduction
 - Fully animated DAPPERWARE (only spinning animation for now to test real time animations)
 - Application for registering productivity apps
-- Sticky notes app (known issue where too many notes cause lag and sticky note manager window doesnt display correctly without border
+- Sticky notes app (known issue where too many notes cause lag and sticky note manager window doesnt display correctly without border)
 - Exit button (yeah I'd hope so)
+- Debug Menu (Click on DAPPERWARE to bring him in focus then press D)
 
 PLANNED FEATURES:
 - More animations for DAPPERWARE to bring him to life
@@ -28,7 +29,8 @@ PLANNED FEATURES:
 - To Do List
 - Task Timer
 - Task Manager
-- Code Checker (?)
+- Games
+- Text To Speech
 - Level Up System
 - Coins
 - Shop
